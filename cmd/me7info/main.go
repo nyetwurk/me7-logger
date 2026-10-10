@@ -74,7 +74,8 @@ Usage:
 
 Commands:
   generate  Write an .ecu file for the image and, when calibration maps
-            were located, a TunerPro XDF. Does not open a serial port.
+            were located, a TunerPro XDF. --model writes the full located
+            model as JSON. Does not open a serial port.
   probe     Report the DPP block and needle hits. --maps also counts the
             calibration maps generate would write to the XDF.
   parity    Score each corpus image against legacy ME7Info output.
@@ -105,6 +106,7 @@ other names/*.yaml list on the images of its layout block:
     adds nothing. It is 0 only when every map that hit is a scalar.
   - The confidence column is the body bytes of the names that hit. Its
     denominator is that matched set, not the tuner list.
+  - A star after the tier means the image has no corpus definition.
 
 The image's corpus definition (corpus.tsv def), when present, is its
 address oracle. Its provenance origin (damos, a2l, hand) says whether it
@@ -166,6 +168,7 @@ func cmdGenerate(args []string) error {
 	out := fs.StringP("output", "o", "", "ecu output `<file>`, - for stdout (default <image>.ecu)")
 	xdfPath := fs.StringP("xdf", "x", "", "tuner xdf output `<file>`, - for stdout (default <image>.xdf when listed maps were located)")
 	fullPath := fs.String("full-xdf", "", "also write every located named map to this xdf `<file>`, - for stdout")
+	modelPath := fs.String("model", "", "full located model JSON `<file>`, - for stdout")
 	scale := fs.String("5120", "auto", "mbar scaling `<mode>`: auto, on, or off")
 	clock := fs.Int("clock", 0, "CPU clock `<MHz>`: 20, 24, 32, or 40; 0 uses config/names.yaml")
 	conn := fs.String("connect", "", "override Connect with `<mode>`, for example SLOW-0x11")
@@ -204,6 +207,11 @@ func cmdGenerate(args []string) error {
 	if err != nil {
 		return err
 	}
+	if *modelPath != "" {
+		if err := writeModel(*modelPath, imgPath, img, res.Maps, cats); err != nil {
+			return err
+		}
+	}
 	if *fullPath != "" {
 		if err := writeXDF(*fullPath, imgPath, img, res.Maps, cats, false); err != nil {
 			return err
@@ -222,6 +230,26 @@ func xdfModel(imgPath string, img []byte, maps []record.Map, cats *model.Categor
 	}
 	m.Categorize(cats, xdf.Other)
 	return m, conflicts, nil
+}
+
+func writeModel(path, imgPath string, img []byte, maps []record.Map, cats *model.CategoryTable) error {
+	m, _, err := xdfModel(imgPath, img, maps, cats, false)
+	if err != nil || len(m.Objects) == 0 {
+		return err
+	}
+	b, err := canon.MarshalStamped(m, "me7info generate")
+	if err != nil {
+		return err
+	}
+	if path == "-" {
+		_, err = os.Stdout.Write(b)
+		return err
+	}
+	if err := os.WriteFile(path, b, 0o644); err != nil {
+		return err
+	}
+	fmt.Fprintf(os.Stderr, "wrote %s\n", path)
+	return nil
 }
 
 func writeXDF(path, imgPath string, img []byte, maps []record.Map, cats *model.CategoryTable, tuner bool) error {

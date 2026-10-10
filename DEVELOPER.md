@@ -60,7 +60,7 @@ Flags use pflag (`internal/cli`): a long name takes two hyphens (`--user`), its 
 
 `signatures.yaml` rows run top to bottom, and the first row that hits fills a name. Prepended axis counts become rows and columns only when they account for every byte up to the body; never invent a count of 1. Only named maps reach the XDF.
 
-`config/categories.json` is the corpus `categories.json` (xdfkit `docs/corpus.md`), copied by `make corpus-bump`; a test fails when they differ. It files each XDF map under a category. The tuner XDF holds only its names plus the maps at their axis addresses; `--full-xdf` holds every named map, with the rest under `Other`.
+`config/categories.json` is the corpus `categories.json` (xdfkit `docs/corpus.md`), copied by `make corpus-bump`; a test fails when they differ. It files each XDF map under a category. The tuner XDF holds only its names plus the maps at their axis addresses; `--full-xdf` holds every named map, with the rest under `Other`. `--model` writes that full model as JSON for the corpus (`xdfkit` `publish/README.md`).
 
 A constant at a table axis address becomes a 1d breakpoint curve with that axis's count and data, so xdfkit links the axis to it. That happens only when every axis there has the same shape, the image values strictly increase, and no other map starts inside the curve. Otherwise it stays a constant, and `probe --maps` lists it as `xdf: not a breakpoint curve`.
 

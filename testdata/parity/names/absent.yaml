@@ -62,3 +62,12 @@ absent:
     # confirm.
     - SNM16OPUW
     - TABGSS2
+  # No DAMOS export yet. No image in this block has the DA 00 42 76 call,
+  # so KFVPLGU and SNM16OPUW have no reader. DLBTS is only stored from the
+  # scanLbts arm that starts with 42 F4 FD 02. DH misses that chain. DQ
+  # takes the other arm, which does not store DLBTS. The M call
+  # 42 F4 FD 07 D7 40 .. 02 F2 F4 does not occur here.
+  4Z7-like:
+    - DLBTS
+    - KFVPLGU
+    - SNM16OPUW
